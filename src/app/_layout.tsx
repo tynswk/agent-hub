@@ -7,6 +7,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Background } from '@/components/Background';
 import { ToastHost } from '@/components/Toast';
+import { initAuth } from '@/lib/drive/auth';
+import { MediaHost } from '@/lib/drive/media';
 import { initLocal } from '@/lib/local';
 import { queryClient } from '@/lib/queryClient';
 import { useTheme } from '@/theme';
@@ -19,6 +21,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     void initLocal();
+    void initAuth();
   }, []);
 
   return (
@@ -65,6 +68,16 @@ export default function RootLayout() {
               }}
             />
             <Stack.Screen
+              name="viewer"
+              options={{
+                presentation: SHEET_PRESENTATION,
+                animation: Platform.OS === 'ios' ? undefined : 'slide_from_bottom',
+                sheetAllowedDetents: [1],
+                sheetGrabberVisible: false,
+                contentStyle: { backgroundColor: t.paper2 },
+              }}
+            />
+            <Stack.Screen
               name="limit"
               options={{
                 presentation: SHEET_PRESENTATION,
@@ -75,6 +88,7 @@ export default function RootLayout() {
               }}
             />
           </Stack>
+          <MediaHost />
           <ToastHost />
         </QueryClientProvider>
       </SafeAreaProvider>

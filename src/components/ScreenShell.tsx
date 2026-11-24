@@ -9,7 +9,7 @@ export function ScreenShell({
   right,
   children,
 }: {
-  title: string;
+  title: ReactNode;
   right?: ReactNode;
   children?: ReactNode;
 }) {
@@ -27,7 +27,7 @@ export function ScreenShell({
         <BlurView intensity={60} tint={t.blurTint} style={StyleSheet.absoluteFill} />
         <View style={[StyleSheet.absoluteFill, { backgroundColor: t.glass2 }]} />
         <View style={[styles.titleRow, { paddingTop: insets.top }]}>
-          <Text style={[styles.title, { color: t.ink }]}>{title}</Text>
+          {typeof title === 'string' ? <Text style={[styles.title, { color: t.ink }]}>{title}</Text> : title}
           {right}
         </View>
       </View>

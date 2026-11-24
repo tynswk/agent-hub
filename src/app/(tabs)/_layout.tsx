@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Tabs, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { MiniPlayer } from '@/components/drive/MiniPlayer';
 import { LAST_TAB_KEY, PillTabBar } from '@/components/PillTabBar';
 import { tabBoot } from '@/tabState';
 
@@ -48,6 +49,7 @@ export default function TabsLayout() {
         <Tabs.Screen name="kakeibo" />
         <Tabs.Screen name="drive" />
       </Tabs>
+      <MiniPlayer />
     </View>
   );
 }

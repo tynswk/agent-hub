@@ -2,7 +2,7 @@
   "expo": {
     "name": "Agent Hub",
     "slug": "agent-hub",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "scheme": "agenthub",
@@ -34,7 +34,9 @@
           "cameraPermission": "レシートを撮影するためにカメラを使います",
           "photosPermission": "レシートの写真を選ぶために写真を使います"
         }
-      ]
+      ],
+      ["expo-video", {"supportsBackgroundPlayback": true, "supportsPictureInPicture": true}],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,

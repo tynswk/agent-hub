@@ -56,3 +56,14 @@
 - `GlassMenu` はセッションの新規シート（モデル・エフォート・添付）で使用。メニューが画面より長い場合のスクロールは未対応（Gemini の 11 件は 1920px 高で収まる）。
 - TanStack Query の永続化（アプリ再起動後に前回の表示を出す）は未実装。メモリ上のキャッシュのみ。
 - iOS 実機（formSheet、標準日付ピッカー、haptics）は未確認。
+
+## Drive タブ（段4）
+
+- ログイン方式は drive-viewer の ADR-0027 を参照。redirect_uri は `https://tynswk.github.io/drive-viewer/` 固定、state は `n1.<戻り先URLのbase64url>.<乱数>`（戻り先は `Linking.createURL('drive-auth')`）。ASWebAuthenticationSession（ephemeral）で開き、Worker `/exchange`・`/refresh` へは `X-Client: agenthub` を付け Origin は付けない。トークンは expo-secure-store。
+- 状態は `src/lib/drive/`：`auth.ts`（ログイン・更新・ログアウト）、`api.ts`（drive.js の移植）、`data.ts`（範囲・ピン留め・最近・ツリー）、`cache.ts`（本文は cacheDirectory に合計150MB・1件30MB）、`media.tsx`（アプリに1つのプレーヤー）、`diff.ts`（3方向マージ）。
+- 最近：範囲は祖先からクライアント側で判定。前面の間だけ15秒ごとに先頭ページを見て「新着 N 件」。ツリー：開いたフォルダの中身を平らにした FlashList。フォルダ長押しで GlassMenu（ピン留め）。ピンは AsyncStorage `dv_pins`（ログアウトでも残す）。
+- ビューアは `/viewer?id=`（iOS は formSheet、Android は modal）。md は react-native-marked（相対リンクは baseUrl `dvrel:` を付けて判別し、findByPath で開く）。保存は PATCH、版が変わっていれば MergeModal。HTML は WebView（`originWhitelist=['*']` ＋ onShouldStartLoadWithRequest で about:/data: 以外を止める。許可リストを about:blank だけにすると RN が外部ブラウザへ渡してしまうため）。PDF は iOS のみ WebView（file://）、Android は「Driveで開く」。
+- 動画・音声：expo-video。ヘッダ付き VideoSource。残り5分を切ったら新しいトークンで再生元を作り直し、位置・速度を引き継ぐ。ミニプレーヤーは (tabs)/_layout に置きタブをまたいで残る。
+- ディープリンク：`agenthub://drive?path=…` / `?id=…`（id 優先）。未ログインなら params を保持し、ログイン後に開く。
+- 確認用モック：`EXPO_PUBLIC_DRIVE_MOCK=1`（`EXPO_PUBLIC_DRIVE_MOCK_SHORT=1` でトークン寿命を短くする）。コードは IPA に入るが、CI に env を渡さないので動かない。
+- 更新の追従：ビューアを開いている間15秒ごとに版を確認し、変わっていれば自動で再読込（編集中はトーストだけ）。Toast に操作ボタンが無いため PWA の「再読込」ボタンは置いていない。
