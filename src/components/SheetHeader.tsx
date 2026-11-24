@@ -1,4 +1,4 @@
-import { Check, X } from 'lucide-react-native';
+import { Check, Play, X } from 'lucide-react-native';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Loader } from '@/components/Loader';
@@ -11,11 +11,15 @@ export function SheetHeader({
   onClose,
   onOk,
   busy,
+  okIcon = 'check',
+  okLabel = '確定',
 }: {
   title: string;
   onClose: () => void;
   onOk?: () => void;
   busy?: boolean;
+  okIcon?: 'check' | 'play';
+  okLabel?: string;
 }) {
   const t = useTheme();
   // Android は通常のモーダル（全面）なので、ステータスバーの分を空ける。iOS の formSheet は不要。
@@ -27,8 +31,12 @@ export function SheetHeader({
       </Press>
       <Text style={[styles.title, { color: t.ink }]}>{title}</Text>
       {onOk ? (
-        <Press mode="dim" onPress={onOk} disabled={busy} style={styles.btn} accessibilityLabel="確定">
-          {busy ? <Loader size={20} color={t.fresh} /> : <Check size={22} color={t.fresh} strokeWidth={2.4} />}
+        <Press mode="dim" onPress={onOk} disabled={busy} style={styles.btn} accessibilityLabel={okLabel}>
+          {busy ? <Loader size={20} color={t.fresh} /> : okIcon === 'play' ? (
+            <Play size={19} color={t.fresh} fill={t.fresh} />
+          ) : (
+            <Check size={22} color={t.fresh} strokeWidth={2.4} />
+          )}
         </Press>
       ) : (
         <View style={styles.btn} />

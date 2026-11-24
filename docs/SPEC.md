@@ -2,12 +2,13 @@
 
 移植元・方針の正は `G:\マイドライブ\AI_Agents\dev\agent-hub-native\PORTING.md`。ここには実装で決めたことと API の注意点だけを書く。
 
-## 構成（段2時点）
+## 構成（段3時点）
 
 - `src/app/_layout.tsx`：ルート。Stack の中に `(tabs)`（ピル型タブバー）と、formSheet の `manual`（手入力・編集・カテゴリー確認）、`review`（要確認のレシート）。
 - `src/app/(tabs)/`：セッション・家計簿・Drive。タブは横スワイプで切り替わらない（タブバーのタップ／ドラッグのみ）。
 - `src/lib/api.ts`：通信。`EXPO_PUBLIC_API_BASE`、モック切替 `EXPO_PUBLIC_MOCK_WRITES=1`。
 - `src/lib/local.ts`：端末側の控え（expo-sqlite）と再送。`src/lib/kakeibo.ts`：型・集計の補助・クエリ・小さなストア。
+- `src/app/session-new.tsx`（新規セッション）、`src/app/limit.tsx`（AI 上限の詳細、`detents [0.3]`）も formSheet。`src/lib/sessions.ts`：型・クエリ・ストア（`sessUi`：操作中の行と起動中の仮の行、`limSheet`）・再開/停止/起動の処理。`src/lib/models.ts`：モデル/エフォート一覧（PWA の app.js と同じ）。
 - 共通部品（`src/components`）：`Press`（押下ハイライト）、`GlassMenu`、`PillSegment`、`Toast`（`toast()` はどこからでも呼べる）、`Loader`、`SheetHeader`、`SwipeRow`、`Form`。
 
 ## 環境変数
@@ -15,7 +16,7 @@
 | 変数 | 内容 |
 |---|---|
 | `EXPO_PUBLIC_API_BASE` | pwa_api の URL。IPA は Actions の secret `API_BASE`、Expo Go は `.env.local`（gitignore）。エミュレータからは `http://10.0.2.2:8768` |
-| `EXPO_PUBLIC_MOCK_WRITES` | `1` のとき書き込み系（POST/PUT/DELETE、レシート送信、将来のセッション start/resume/stop）をネットワークに出さず、成功応答をローカルで返す。**CI には渡さない（本番）** |
+| `EXPO_PUBLIC_MOCK_WRITES` | `1` のとき書き込み系（POST/PUT/DELETE、レシート送信、セッションの start/resume/stop）をネットワークに出さず、成功応答をローカルで返す。**CI には渡さない（本番）** |
 
 モックは読み取り結果に重ねる方式：追加・編集・削除は端末内のメモリに持ち、`/entries` の応答に反映して表示する（アプリを再起動すると消える）。レシートのモックは `mock_` 始まりの job_id を返し、3 回目のポーリングで done になる。`/pending` は確認済みにしたジョブを除く。
 
@@ -32,6 +33,17 @@
 - **月切替**は月ごとにクエリをキャッシュ（`['kk','entries',month]`）。切替直後にキャッシュがあれば前回の表示を出しつつ裏で取り直す。月を変えても前月のデータは出さない。
 - 日付ピッカー：iOS は標準のコンパクト表示、Android は標準ダイアログ。
 
+## セッションタブ（段3）
+
+- 一覧は `ScrollView` に全行を並べ、各行に reanimated の `LinearTransition`（0.24 秒）を付ける。SectionList にしないのは、グループ間の移動を「同じ行がスライドする」形にするため（SectionList は別セクションへ移ると再マウントされる）。105 件程度なら支障なし。
+- 行の所属は `pending[kind:id] ?? running`（操作開始時の状態）。操作が終わって再取得し、`pending` を外した瞬間にグループが替わる（PWA と同じ）。
+- 30 秒ごとの一覧再取得・5 分ごとの上限再取得は、タブが前面（`useFocusEffect`）かつ AppState が active のときだけ。
+- 上限の 4 枠はヘッダ直下に固定（一覧と一緒に流れない）。円は react-native-svg。20% 以下は琥珀、0% は赤、取れない枠は「—」。
+- 新規開始：シートを閉じてから `beginSession`。実行中の先頭に仮の行（`isNew`）を出し、`startSession` の完了後に再取得して外す。起動中は ＋ を無効にする。添付ありは `uploadAsync`（MULTIPART、field `file`、他は `kind/model/effort/prompt`）。
+- モック：`/api/sessions` の読み取りに重ねる（resume=実行中、stop=停止中、start=一覧に行を追加）。start のモックは 2.2 秒待って仮の行を見せる。
+- **`src/app/(tabs)/index.tsx` は `'use no memo'`**。React Compiler を通すと `useFocusEffect(useCallback(...))` 周りで「フックの順序が変わった」エラーになり描画できなかったため、この画面だけコンパイラを外している。
+- 添付は expo-image-picker（ライブラリ）と expo-document-picker（Expo Go 同梱）。Android エミュレータでは添付メニューの選択画面までは見ていない。
+
 ## API の注意点
 
 - 更新・削除は `POST /api/kakeibo/entries/{id}/update|delete` を使う（PUT/DELETE は使わない。PWA の Service Worker 事情の名残だが、そのまま揃える）。
@@ -41,6 +53,6 @@
 
 ## 未実装・次段
 
-- `GlassMenu` は部品のみ（家計簿画面では使っていない。セッションの新規シートで使う）。
+- `GlassMenu` はセッションの新規シート（モデル・エフォート・添付）で使用。メニューが画面より長い場合のスクロールは未対応（Gemini の 11 件は 1920px 高で収まる）。
 - TanStack Query の永続化（アプリ再起動後に前回の表示を出す）は未実装。メモリ上のキャッシュのみ。
 - iOS 実機（formSheet、標準日付ピッカー、haptics）は未確認。

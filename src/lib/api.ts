@@ -1,5 +1,6 @@
 // pwa_api への通信。書き込み系は EXPO_PUBLIC_MOCK_WRITES=1 のときネットワークに出さず、ローカルで成功応答を返す。
 import * as FileSystem from 'expo-file-system/legacy';
+import { modelName } from '@/lib/models';
 
 export const API_BASE = (process.env.EXPO_PUBLIC_API_BASE ?? '').replace(/\/$/, '');
 export const MOCK_WRITES = process.env.EXPO_PUBLIC_MOCK_WRITES === '1';
@@ -43,7 +44,11 @@ type Entry = {
 };
 type EntriesRes = { month: string; entries: Entry[]; total: number; expense: number; income: number };
 
+type Sess = { id: string; kind: string; title: string; model: string; last_active: number; running: boolean };
+
 const mock = {
+  sessRun: new Map<string, boolean>(), // 'kind:id' -> running（resume/stop で上書き）
+  sessAdded: [] as Sess[], // start で足した行
   added: [] as Entry[],
   updated: new Map<string, Partial<Entry>>(),
   deleted: new Set<string>(),
@@ -66,8 +71,33 @@ function overlayEntries(d: EntriesRes): EntriesRes {
   return { ...d, entries: kept, total, expense, income };
 }
 
+function overlaySessions(d: { sessions?: Sess[] }): { sessions: Sess[] } {
+  const list = [...mock.sessAdded.slice().reverse(), ...(d.sessions ?? [])].map((s) => {
+    const r = mock.sessRun.get(`${s.kind}:${s.id}`);
+    return r === undefined ? s : { ...s, running: r };
+  });
+  return { ...d, sessions: list };
+}
+
 function mockWrite(path: string, body: unknown): unknown {
   const b = (body ?? {}) as Record<string, unknown>;
+  if (path === '/api/sessions/resume' || path === '/api/sessions/stop') {
+    mock.sessRun.set(`${String(b.kind ?? 'claude')}:${String(b.id ?? '')}`, path.endsWith('/resume'));
+    return { ok: true, message: 'モック' };
+  }
+  if (path === '/api/sessions/start') {
+    const prompt = String(b.prompt ?? '');
+    const model = modelName(String(b.model ?? ''));
+    mock.sessAdded.push({
+      id: `mock_${++mock.seq}`,
+      kind: String(b.kind ?? 'claude'),
+      title: prompt.split('\n')[0] || model,
+      model,
+      last_active: Date.now() / 1000,
+      running: true,
+    });
+    return { ok: true, message: 'モック' };
+  }
   let m = path.match(/^\/api\/kakeibo\/entries\/([^/]+)\/update$/);
   if (m) {
     const id = decodeURIComponent(m[1]);
@@ -127,6 +157,7 @@ export async function apiGet<T>(path: string): Promise<T> {
   const d = await parse<T>(r);
   if (MOCK_WRITES) {
     if (path.startsWith('/api/kakeibo/entries?')) return overlayEntries(d as unknown as EntriesRes) as T;
+    if (path === '/api/sessions') return overlaySessions(d as unknown as { sessions?: Sess[] }) as T;
     if (path === '/api/kakeibo/pending') {
       const p = d as unknown as { pending?: { id: string }[] };
       return { ...p, pending: (p.pending ?? []).filter((j) => !mock.confirmed.has(j.id)) } as T;
@@ -180,4 +211,36 @@ export async function uploadReceipt(
     throw new ApiError(d.message || `HTTP ${res.status}`, res.status);
   }
   return { ok: !!d.ok, job_id: d.job_id, message: d.message };
+}
+
+export type StartRequest = { kind: string; model: string; effort: string; prompt: string };
+export type StartFile = { uri: string; name: string; mime: string };
+
+// セッションの新規起動。添付ありは multipart（フィールド名は PWA と同じ kind / model / effort / prompt / file）。
+export async function startSession(
+  req: StartRequest,
+  file?: StartFile | null,
+): Promise<{ ok?: boolean; message?: string }> {
+  if (MOCK_WRITES) {
+    await sleep(2200);
+    return mockWrite('/api/sessions/start', req) as { ok?: boolean; message?: string };
+  }
+  if (!file) return apiPost('/api/sessions/start', req);
+  const res = await FileSystem.uploadAsync(`${API_BASE}/api/sessions/start`, file.uri, {
+    httpMethod: 'POST',
+    uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+    fieldName: 'file',
+    mimeType: file.mime,
+    parameters: { ...req },
+  });
+  let d: { ok?: boolean; message?: string } = {};
+  try {
+    d = JSON.parse(res.body);
+  } catch {
+    // JSON でない
+  }
+  if (res.status < 200 || res.status >= 300) {
+    throw new ApiError(d.message || `HTTP ${res.status}`, res.status);
+  }
+  return d;
 }

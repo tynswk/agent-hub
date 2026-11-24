@@ -81,7 +81,7 @@ export function newMid() {
 export const PALETTE = ['#e3a23f', '#6ea8c9', '#8fbc8f', '#c97b8a', '#9b8fc4', '#c4a484', '#7f9aa3', '#93979f'];
 
 // ---- 小さなストア（表示中の月・絞り込み日、シートへ渡す内容）
-function createStore<T extends object>(init: T) {
+export function createStore<T extends object>(init: T) {
   let state = init;
   const subs = new Set<() => void>();
   return {

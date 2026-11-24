@@ -54,6 +54,26 @@ export default function RootLayout() {
                 contentStyle: { backgroundColor: t.paper2 },
               }}
             />
+            <Stack.Screen
+              name="session-new"
+              options={{
+                presentation: SHEET_PRESENTATION,
+                animation: Platform.OS === 'ios' ? undefined : 'slide_from_bottom',
+                sheetAllowedDetents: [0.7, 0.95],
+                sheetGrabberVisible: true,
+                contentStyle: { backgroundColor: t.paper2 },
+              }}
+            />
+            <Stack.Screen
+              name="limit"
+              options={{
+                presentation: SHEET_PRESENTATION,
+                animation: Platform.OS === 'ios' ? undefined : 'slide_from_bottom',
+                sheetAllowedDetents: [0.3],
+                sheetGrabberVisible: true,
+                contentStyle: { backgroundColor: t.paper2 },
+              }}
+            />
           </Stack>
           <ToastHost />
         </QueryClientProvider>
