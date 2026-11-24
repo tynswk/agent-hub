@@ -1,8 +1,8 @@
-# Agent Hub ネイティブ版 仕様メモ
+# Agent Hub ネイティブ版 仕様メモ（v1.0.0）
 
 移植元・方針の正は `G:\マイドライブ\AI_Agents\dev\agent-hub-native\PORTING.md`。ここには実装で決めたことと API の注意点だけを書く。
 
-## 構成（段3時点）
+## 構成
 
 - `src/app/_layout.tsx`：ルート。Stack の中に `(tabs)`（ピル型タブバー）と、formSheet の `manual`（手入力・編集・カテゴリー確認）、`review`（要確認のレシート）。
 - `src/app/(tabs)/`：セッション・家計簿・Drive。タブは横スワイプで切り替わらない（タブバーのタップ／ドラッグのみ）。
@@ -16,6 +16,7 @@
 | 変数 | 内容 |
 |---|---|
 | `EXPO_PUBLIC_API_BASE` | pwa_api の URL。IPA は Actions の secret `API_BASE`、Expo Go は `.env.local`（gitignore）。エミュレータからは `http://10.0.2.2:8768` |
+| `EXPO_PUBLIC_DRIVE_MOCK` | `1` のとき Drive の認証と API をモックに差し替える（`EXPO_PUBLIC_DRIVE_MOCK_SHORT=1` でトークン寿命を短く）。CI には渡さない |
 | `EXPO_PUBLIC_MOCK_WRITES` | `1` のとき書き込み系（POST/PUT/DELETE、レシート送信、セッションの start/resume/stop）をネットワークに出さず、成功応答をローカルで返す。**CI には渡さない（本番）** |
 
 モックは読み取り結果に重ねる方式：追加・編集・削除は端末内のメモリに持ち、`/entries` の応答に反映して表示する（アプリを再起動すると消える）。レシートのモックは `mock_` 始まりの job_id を返し、3 回目のポーリングで done になる。`/pending` は確認済みにしたジョブを除く。
@@ -38,10 +39,10 @@
 - 一覧は `ScrollView` に全行を並べ、各行に reanimated の `LinearTransition`（0.24 秒）を付ける。SectionList にしないのは、グループ間の移動を「同じ行がスライドする」形にするため（SectionList は別セクションへ移ると再マウントされる）。105 件程度なら支障なし。
 - 行の所属は `pending[kind:id] ?? running`（操作開始時の状態）。操作が終わって再取得し、`pending` を外した瞬間にグループが替わる（PWA と同じ）。
 - 30 秒ごとの一覧再取得・5 分ごとの上限再取得は、タブが前面（`useFocusEffect`）かつ AppState が active のときだけ。
-- 上限の 4 枠はヘッダ直下に固定（一覧と一緒に流れない）。円は react-native-svg。20% 以下は琥珀、0% は赤、取れない枠は「—」。
+- 上限の 4 枠はヘッダのタイトル位置に横一列（仕様 v0.32。バーの高さは変えない。名前、円、系の順。円 22px）。円は react-native-svg。20% 以下は琥珀、0% は赤、取れない枠は「—」。
 - 新規開始：シートを閉じてから `beginSession`。実行中の先頭に仮の行（`isNew`）を出し、`startSession` の完了後に再取得して外す。起動中は ＋ を無効にする。添付ありは `uploadAsync`（MULTIPART、field `file`、他は `kind/model/effort/prompt`）。
 - モック：`/api/sessions` の読み取りに重ねる（resume=実行中、stop=停止中、start=一覧に行を追加）。start のモックは 2.2 秒待って仮の行を見せる。
-- **`src/app/(tabs)/index.tsx` は `'use no memo'`**。React Compiler を通すと `useFocusEffect(useCallback(...))` 周りで「フックの順序が変わった」エラーになり描画できなかったため、この画面だけコンパイラを外している。
+- セッション画面の `'use no memo'` は v1.0.0 で外した（段5）。Android（Expo Go）で一覧・停止/再開・タブ往復を確認し、フックの順序エラーは再現しなかった。iOS 実機は未確認。Drive 側の `drive.tsx` / `viewer.tsx` / `Bodies.tsx` / `DocViewer.tsx` / `MdView.tsx` は WebView・動画まわりの回避として `'use no memo'` のまま。
 - 添付は expo-image-picker（ライブラリ）と expo-document-picker（Expo Go 同梱）。Android エミュレータでは添付メニューの選択画面までは見ていない。
 
 ## API の注意点
@@ -65,5 +66,14 @@
 - ビューアは `/viewer?id=`（iOS は formSheet、Android は modal）。md は react-native-marked（相対リンクは baseUrl `dvrel:` を付けて判別し、findByPath で開く）。保存は PATCH、版が変わっていれば MergeModal。HTML は WebView（`originWhitelist=['*']` ＋ onShouldStartLoadWithRequest で about:/data: 以外を止める。許可リストを about:blank だけにすると RN が外部ブラウザへ渡してしまうため）。PDF は iOS のみ WebView（file://）、Android は「Driveで開く」。
 - 動画・音声：expo-video。ヘッダ付き VideoSource。残り5分を切ったら新しいトークンで再生元を作り直し、位置・速度を引き継ぐ。ミニプレーヤーは (tabs)/_layout に置きタブをまたいで残る。
 - ディープリンク：`agenthub://drive?path=…` / `?id=…`（id 優先）。未ログインなら params を保持し、ログイン後に開く。
-- 確認用モック：`EXPO_PUBLIC_DRIVE_MOCK=1`（`EXPO_PUBLIC_DRIVE_MOCK_SHORT=1` でトークン寿命を短くする）。コードは IPA に入るが、CI に env を渡さないので動かない。
+- 確認用モック：`EXPO_PUBLIC_DRIVE_MOCK=1`。
 - 更新の追従：ビューアを開いている間15秒ごとに版を確認し、変わっていれば自動で再読込（編集中はトーストだけ）。Toast に操作ボタンが無いため PWA の「再読込」ボタンは置いていない。
+
+## 仕上げ（段5・v1.0.0）
+
+- **モックは本番バンドルに入らない**：`process.env.EXPO_PUBLIC_DRIVE_MOCK === '1'` / `EXPO_PUBLIC_MOCK_WRITES === '1'` を使う場所で直接比較し、モック本体（`src/lib/drive/mock.ts`、`src/lib/apiMock.ts`、`assets/mock/sample.mp4`）は分岐の中で `require` する。env なしの `npx expo export --platform ios` で、バンドルと assets に mock 本体・sample.mp4 が無いことを確認した（Hermes バイトコードにはプロパティ名の文字列だけ残る）。
+- **クイックアクション「撮影」**：`expo-quick-actions`。静的な項目は config plugin（`iosActions`）で Info.plist の `UIApplicationShortcutItems` に入る（SF Symbol `camera`）。起動処理は `src/lib/quickActions.ts`（`(tabs)/_layout` で呼ぶ）。Expo Go（`Constants.appOwnership === 'expo'`）では読み込まず、`require` 失敗も握りつぶす。押すと家計簿タブへ移動して `capture(false)`（`src/lib/capture.ts`）でカメラを起動。
+- **iPad**：`(tabs)/_layout` で列を最大 720pt・中央寄せ（ピルバー・ミニプレーヤー・各ヘッダもこの列の中）。シートは formSheet なので iPad では OS が幅を決める。
+- **Drive の新着ピル**：検索欄の下（先頭行の上）に浮かべる。
+- モデル名が `<` で始まる内部値（`<synthetic>` 等）は一覧に出さない。
+- ダークモードは全画面を目視して、theme.ts の変更は不要だった。

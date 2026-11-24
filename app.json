@@ -2,7 +2,7 @@
   "expo": {
     "name": "Agent Hub",
     "slug": "agent-hub",
-    "version": "0.4.0",
+    "version": "1.0.0",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "scheme": "agenthub",
@@ -35,8 +35,29 @@
           "photosPermission": "レシートの写真を選ぶために写真を使います"
         }
       ],
-      ["expo-video", {"supportsBackgroundPlayback": true, "supportsPictureInPicture": true}],
-      "expo-secure-store"
+      [
+        "expo-video",
+        {
+          "supportsBackgroundPlayback": true,
+          "supportsPictureInPicture": true
+        }
+      ],
+      "expo-secure-store",
+      [
+        "expo-quick-actions",
+        {
+          "iosActions": [
+            {
+              "id": "capture",
+              "title": "撮影",
+              "icon": "symbol:camera",
+              "params": {
+                "href": "/kakeibo"
+              }
+            }
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

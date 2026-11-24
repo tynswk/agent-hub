@@ -5,8 +5,7 @@ import { type VideoPlayer, type VideoSource, useVideoPlayer } from 'expo-video';
 import { useEffect } from 'react';
 import { toast } from '@/components/Toast';
 import { type DFile, authHeaders, contentUrl } from '@/lib/drive/api';
-import { DRIVE_MOCK, forceRefresh, tokenLeftMs } from '@/lib/drive/auth';
-import { mockAssets } from '@/lib/drive/mock';
+import { forceRefresh, tokenLeftMs } from '@/lib/drive/auth';
 import { createStore } from '@/lib/kakeibo';
 
 // 再生中のファイルIDだけ（一覧の行が毎回再描画されないよう、時刻の更新とは分ける）
@@ -27,7 +26,10 @@ export const media = createStore({
 
 async function sourceOf(f: DFile): Promise<VideoSource> {
   const metadata = { title: f.name };
-  if (DRIVE_MOCK) return { assetId: f.mimeType.startsWith('audio/') ? mockAssets.audio() : mockAssets.video(), metadata };
+  if (process.env.EXPO_PUBLIC_DRIVE_MOCK === '1') {
+    const assetId = require('../../../assets/mock/sample.mp4') as number;
+    return { assetId, metadata };
+  }
   return { uri: contentUrl(f.id), headers: await authHeaders(REBUILD_LEFT_MS), metadata };
 }
 

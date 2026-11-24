@@ -208,7 +208,7 @@ export function RecentList({ onOpen }: { onOpen: (f: DFile) => void }) {
         <Animated.View
           entering={FadeIn.duration(140)}
           exiting={FadeOut.duration(120)}
-          style={[styles.pillWrap, { top: insets.top + HEADER_H + 6 }]}
+          style={[styles.pillWrap, { top: insets.top + HEADER_H + 8 + 38 + 8 }]}
         >
           <Press
             onPress={showNewer}

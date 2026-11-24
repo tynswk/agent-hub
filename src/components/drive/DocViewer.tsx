@@ -22,10 +22,8 @@ import { Loader } from '@/components/Loader';
 import { PillSegment } from '@/components/PillSegment';
 import { toast } from '@/components/Toast';
 import { type DFile, fetchText, findByPath, getVersion, parentDirs, saveText } from '@/lib/drive/api';
-import { DRIVE_MOCK } from '@/lib/drive/auth';
 import { getBody, putBodyText, readBodyText } from '@/lib/drive/cache';
 import { diff3, mergedText } from '@/lib/drive/diff';
-import { mockOnEdit } from '@/lib/drive/mock';
 import { openFile } from '@/lib/drive/open';
 import { ago, fmtSize, freshness } from '@/lib/drive/util';
 import { useDiscardGuard } from '@/lib/discard';
@@ -145,7 +143,7 @@ export function DocViewer({ file, kind }: { file: DFile; kind: K }) {
     editV.current = ver.current;
     setDraft(text);
     setEditing(true);
-    if (DRIVE_MOCK) mockOnEdit(file.id);
+    if (process.env.EXPO_PUBLIC_DRIVE_MOCK === '1') (require('@/lib/drive/mock') as typeof import('@/lib/drive/mock')).mockOnEdit(file.id);
   };
   const leaveEdit = () => {
     editingRef.current = false;

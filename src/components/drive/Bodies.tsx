@@ -10,10 +10,8 @@ import { Loader } from '@/components/Loader';
 import { Press } from '@/components/Press';
 import { toast } from '@/components/Toast';
 import { type DFile, authHeaders, contentUrl, downloadToCache, getVersion } from '@/lib/drive/api';
-import { DRIVE_MOCK } from '@/lib/drive/auth';
 import { getBody } from '@/lib/drive/cache';
 import { media, openMedia, seekTo, setRate, togglePlay } from '@/lib/drive/media';
-import { mockAssets } from '@/lib/drive/mock';
 import { mmss } from '@/lib/drive/util';
 import { useTheme } from '@/theme';
 
@@ -48,7 +46,10 @@ export function ImageBody({ file, bottom }: { file: DFile; bottom: number }) {
       </View>
     );
   }
-  const source = DRIVE_MOCK ? mockAssets.image() : { uri: contentUrl(file.id), headers };
+  const source =
+    process.env.EXPO_PUBLIC_DRIVE_MOCK === '1'
+      ? (require('../../../assets/bg.jpg') as number)
+      : { uri: contentUrl(file.id), headers };
   return (
     <ScrollView
       maximumZoomScale={6}

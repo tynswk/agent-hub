@@ -1,8 +1,7 @@
 // Drive API（drive-viewer の drive.js の移植）。401 は一度だけ更新して再試行する。祖先フォルダのキャッシュ（ADR-0016）もここ。
 import * as FileSystem from 'expo-file-system/legacy';
-import { DRIVE_MOCK, accessToken, forceRefresh } from '@/lib/drive/auth';
+import { accessToken, forceRefresh } from '@/lib/drive/auth';
 import { bodyPath, ensureDir, jget, jset, registerBody } from '@/lib/drive/cache';
-import { mockFetch, mockPdf } from '@/lib/drive/mock';
 
 const API = 'https://www.googleapis.com/drive/v3/';
 const UPLOAD = 'https://www.googleapis.com/upload/drive/v3/';
@@ -33,7 +32,10 @@ export class DriveError extends Error {
 }
 
 /* ===== 低レベル ===== */
-const doFetch = (url: string, init: RequestInit) => (DRIVE_MOCK ? mockFetch(url, init) : fetch(url, init));
+const doFetch = (url: string, init: RequestInit) => {
+  if (process.env.EXPO_PUBLIC_DRIVE_MOCK === '1') return (require('@/lib/drive/mock') as typeof import('@/lib/drive/mock')).mockFetch(url, init);
+  return fetch(url, init);
+};
 
 export async function call(url: string, init: RequestInit = {}): Promise<Response> {
   const go = (t: string) =>
@@ -289,8 +291,8 @@ export async function authHeaders(minLeft = 0) {
 export async function downloadToCache(f: DFile, ext: string, version: string): Promise<string> {
   await ensureDir();
   const path = bodyPath(f.id, ext);
-  if (DRIVE_MOCK) {
-    await FileSystem.writeAsStringAsync(path, mockPdf);
+  if (process.env.EXPO_PUBLIC_DRIVE_MOCK === '1') {
+    await FileSystem.writeAsStringAsync(path, (require('@/lib/drive/mock') as typeof import('@/lib/drive/mock')).mockPdf);
   } else {
     const run = async (t: string) =>
       FileSystem.downloadAsync(contentUrl(f.id), path, { headers: { Authorization: 'Bearer ' + t } });

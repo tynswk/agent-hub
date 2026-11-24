@@ -4,12 +4,14 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { MiniPlayer } from '@/components/drive/MiniPlayer';
 import { LAST_TAB_KEY, PillTabBar } from '@/components/PillTabBar';
+import { useQuickActions } from '@/lib/quickActions';
 import { tabBoot } from '@/tabState';
 
 const TABS = ['index', 'kakeibo', 'drive'];
 
 export default function TabsLayout() {
   const router = useRouter();
+  useQuickActions();
   const [initial, setInitial] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
@@ -38,20 +40,26 @@ export default function TabsLayout() {
   if (!initial) return null;
   return (
     <View style={[styles.flex, { opacity: ready ? 1 : 0 }]}>
-      <Tabs
-        tabBar={(props) => <PillTabBar {...props} />}
-        screenOptions={{
-          headerShown: false,
-          sceneStyle: { backgroundColor: 'transparent' },
-        }}
-      >
-        <Tabs.Screen name="index" />
-        <Tabs.Screen name="kakeibo" />
-        <Tabs.Screen name="drive" />
-      </Tabs>
-      <MiniPlayer />
+      <View style={styles.col}>
+        <Tabs
+          tabBar={(props) => <PillTabBar {...props} />}
+          screenOptions={{
+            headerShown: false,
+            sceneStyle: { backgroundColor: 'transparent' },
+          }}
+        >
+          <Tabs.Screen name="index" />
+          <Tabs.Screen name="kakeibo" />
+          <Tabs.Screen name="drive" />
+        </Tabs>
+        <MiniPlayer />
+      </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({ flex: { flex: 1 } });
+// iPad など広い画面では 720pt の列を中央に置く
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  col: { flex: 1, width: '100%', maxWidth: 720, alignSelf: 'center' },
+});

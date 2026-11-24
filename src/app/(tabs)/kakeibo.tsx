@@ -1,5 +1,4 @@
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
-import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { Camera, ChevronLeft, ChevronRight, Clock, Pencil } from 'lucide-react-native';
@@ -30,34 +29,14 @@ import {
   useEntries,
   usePending,
 } from '@/lib/kakeibo';
-import { flushOutbox, openCategorySheet, retryAll, sendManual, stageReceipt, useLocal } from '@/lib/local';
+import { capture } from '@/lib/capture';
+import { flushOutbox, openCategorySheet, retryAll, sendManual, useLocal } from '@/lib/local';
 import { BAR_H, HEADER_H, MONO, useTheme } from '@/theme';
 
 type Item =
   | { t: 'sec'; key: string; label: string }
   | { t: 'row'; key: string; e: Entry }
   | { t: 'empty'; key: string; text: string };
-
-async function capture(fromLibrary: boolean) {
-  try {
-    if (!fromLibrary) {
-      const perm = await ImagePicker.requestCameraPermissionsAsync();
-      if (!perm.granted) {
-        toast('カメラの許可がありません');
-        return;
-      }
-    }
-    const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 1 };
-    const res = fromLibrary
-      ? await ImagePicker.launchImageLibraryAsync(opts)
-      : await ImagePicker.launchCameraAsync(opts);
-    if (res.canceled || !res.assets[0]) return;
-    const a = res.assets[0];
-    await stageReceipt(a.uri, a.width, a.height);
-  } catch {
-    toast('レシートを端末に保存できませんでした');
-  }
-}
 
 async function deleteEntry(id: string) {
   removeEntryFromCache(id);

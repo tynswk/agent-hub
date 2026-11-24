@@ -1,5 +1,3 @@
-'use no memo';
-import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { router, useFocusEffect } from 'expo-router';
 import { Play, Plus } from 'lucide-react-native';
@@ -27,13 +25,13 @@ import {
 } from '@/lib/sessions';
 import { BAR_H, HEADER_H, useTheme } from '@/theme';
 
-const LIM_H = 76;
 const SLIDE = LinearTransition.duration(240);
 
 type Item = { t: 'sec'; key: string; label: string } | { t: 'row'; key: string; s: Session };
 
 function Row({ s, busy }: { s: Session; busy: boolean }) {
   const t = useTheme();
+  const model = s.model && !s.model.startsWith('<') ? s.model : '';
   const fresh = isFresh(s.last_active);
   return (
     <Animated.View layout={SLIDE} style={[styles.srow, { borderBottomColor: t.glassBrd }]}>
@@ -44,9 +42,11 @@ function Row({ s, busy }: { s: Session; busy: boolean }) {
         <Text style={[styles.ttl, { color: t.ink }]} numberOfLines={1}>
           {s.title || '（無題）'}
         </Text>
-        <Text style={[styles.sub, { color: t.ink2 }]} numberOfLines={1}>
-          {s.model}
-        </Text>
+        {model ? (
+          <Text style={[styles.sub, { color: t.ink2 }]} numberOfLines={1}>
+            {model}
+          </Text>
+        ) : null}
       </View>
       <Text style={[styles.time, { color: fresh ? t.fresh : t.ink2 }]}>{ago(s.last_active)}</Text>
       <Press
@@ -136,15 +136,39 @@ export default function SessionsScreen() {
     </Press>
   );
 
+  const limits = (
+    <View style={styles.lims}>
+      {LIMITS_META.map((m) => (
+        <Press
+          key={m.id}
+          mode="dim"
+          style={styles.lim}
+          onPress={() => {
+            limSheet.set({ id: m.id });
+            router.push('/limit');
+          }}
+        >
+          <Text style={[styles.limNm, { color: t.ink }]} numberOfLines={1}>
+            {m.name}
+          </Text>
+          <LimitRing value={lq.data?.[m.id]?.remain ?? null} size={22} stroke={3} font={9} />
+          <Text style={[styles.limSub, { color: t.ink2 }]} numberOfLines={1}>
+            {m.sub || ' '}
+          </Text>
+        </Press>
+      ))}
+    </View>
+  );
+
   return (
-    <ScreenShell title="セッション" right={plus}>
+    <ScreenShell title={limits} right={plus}>
       <Animated.ScrollView
-        contentContainerStyle={{ paddingTop: top + LIM_H, paddingBottom: BAR_H + insets.bottom + 48 }}
+        contentContainerStyle={{ paddingTop: top, paddingBottom: BAR_H + insets.bottom + 48 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            progressViewOffset={top + LIM_H}
+            progressViewOffset={top}
             tintColor={t.ink2}
           />
         }
@@ -171,46 +195,16 @@ export default function SessionsScreen() {
         ) : null}
       </Animated.ScrollView>
 
-      <View style={[styles.lims, { top, height: LIM_H, borderBottomColor: t.glassBrd }]}>
-        <BlurView intensity={60} tint={t.blurTint} style={StyleSheet.absoluteFill} />
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: t.glass2 }]} />
-        {LIMITS_META.map((m) => (
-          <Press
-            key={m.id}
-            mode="dim"
-            style={styles.lim}
-            onPress={() => {
-              limSheet.set({ id: m.id });
-              router.push('/limit');
-            }}
-          >
-            <Text style={[styles.limNm, { color: t.ink }]} numberOfLines={1}>
-              {m.name}
-            </Text>
-            <LimitRing value={lq.data?.[m.id]?.remain ?? null} size={34} stroke={4} font={11} />
-            <Text style={[styles.limSub, { color: t.ink2 }]} numberOfLines={1}>
-              {m.sub || ' '}
-            </Text>
-          </Press>
-        ))}
-      </View>
     </ScreenShell>
   );
 }
 
 const styles = StyleSheet.create({
   plus: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  lims: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    overflow: 'hidden',
-  },
-  lim: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3, minWidth: 0 },
-  limNm: { fontSize: 11, fontWeight: '600' },
-  limSub: { fontSize: 10 },
+  lims: { flex: 1, flexDirection: 'row', marginRight: 8, alignSelf: 'stretch' },
+  lim: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 1, minWidth: 0 },
+  limNm: { fontSize: 9.5, fontWeight: '600', lineHeight: 11 },
+  limSub: { fontSize: 8.5, lineHeight: 10 },
   srow: {
     flexDirection: 'row',
     alignItems: 'center',
