@@ -1,0 +1,57 @@
+name: ios
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: prebuild
+        run: npx expo prebuild -p ios --clean
+
+      - name: pod install
+        working-directory: ios
+        run: pod install
+
+      - name: archive
+        run: |
+          set -euo pipefail
+          WS=$(ls -d ios/*.xcworkspace | head -n1)
+          NAME=$(basename "$WS" .xcworkspace)
+          echo "NAME=$NAME" >> "$GITHUB_ENV"
+          xcodebuild -workspace "$WS" -scheme "$NAME" -configuration Release \
+            -sdk iphoneos -destination generic/platform=iOS \
+            -archivePath build/App.xcarchive archive \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+
+      - name: ipa
+        run: |
+          set -euo pipefail
+          mkdir -p ipa/Payload
+          cp -R "build/App.xcarchive/Products/Applications/$NAME.app" ipa/Payload/
+          cd ipa
+          zip -qry ../AgentHub.ipa Payload
+          cd ..
+          ls -la AgentHub.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AgentHub-ipa
+          path: AgentHub.ipa
+          if-no-files-found: error
