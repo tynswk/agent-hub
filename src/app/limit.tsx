@@ -9,7 +9,7 @@ import { useTheme } from '@/theme';
 // AI 上限の詳細：大きな円・残り %・リセット日時
 export default function LimitSheet() {
   const t = useTheme();
-  const { id } = limSheet.use();
+  const { id } = limSheet.useStore();
   const q = useLimits();
   const { close } = useDiscardGuard(false);
   const m = LIMITS_META.find((x) => x.id === id) ?? LIMITS_META[0];

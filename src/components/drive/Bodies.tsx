@@ -115,7 +115,7 @@ const RATES = [0.75, 1, 1.25, 1.5, 1.8, 2];
 
 function SeekBar() {
   const t = useTheme();
-  const m = media.use();
+  const m = media.useStore();
   const [w, setW] = useState(1);
   const frac = m.duration > 0 ? Math.min(1, m.time / m.duration) : 0;
   const seek = (x: number) => {
@@ -144,7 +144,7 @@ function SeekBar() {
 
 export function MediaBody({ file }: { file: DFile }) {
   const t = useTheme();
-  const m = media.use();
+  const m = media.useStore();
   const isVideo = file.mimeType.startsWith('video/');
   useEffect(() => {
     media.set({ viewerOpen: true });

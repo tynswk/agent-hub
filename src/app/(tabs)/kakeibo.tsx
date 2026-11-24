@@ -55,7 +55,7 @@ async function deleteEntry(id: string) {
 export default function KakeiboScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const { month, day } = kkView.use();
+  const { month, day } = kkView.useStore();
   const entriesQ = useEntries(month);
   const catsQ = useCats();
   const pendingQ = usePending();

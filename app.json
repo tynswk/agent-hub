@@ -2,7 +2,7 @@
   "expo": {
     "name": "Agent Hub",
     "slug": "agent-hub",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "scheme": "agenthub",
@@ -11,7 +11,7 @@
     "ios": {
       "bundleIdentifier": "com.toyan.agenthub",
       "supportsTablet": true,
-      "buildNumber": "1",
+      "buildNumber": "2",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }

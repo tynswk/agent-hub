@@ -45,8 +45,8 @@ function LoginView() {
 }
 
 export default function DriveScreen() {
-  const auth = authStore.use();
-  const ui = driveUi.use();
+  const auth = authStore.useStore();
+  const ui = driveUi.useStore();
   const params = useLocalSearchParams<{ id?: string; path?: string }>();
 
   useEffect(() => {

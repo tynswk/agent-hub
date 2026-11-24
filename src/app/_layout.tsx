@@ -1,11 +1,12 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Platform, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Background } from '@/components/Background';
+import { ErrorScreen } from '@/components/ErrorScreen';
 import { ToastHost } from '@/components/Toast';
 import { initAuth } from '@/lib/drive/auth';
 import { MediaHost } from '@/lib/drive/media';
@@ -16,13 +17,38 @@ import { useTheme } from '@/theme';
 // iOS は標準のシート（formSheet）。Android（Expo Go での確認用）は formSheet の中身が描画されないため通常のモーダルにする。
 const SHEET_PRESENTATION = Platform.OS === 'ios' ? 'formSheet' : 'modal';
 
+// ルートの描画中に投げられた例外は、アプリを落とさず画面に出す（expo-router の規約）。
+export { ErrorBoundary } from '@/components/RouteError';
+
+// JS の致命的エラーはネイティブの abort に繋がるので、画面表示に回す。
+let reportFatal: ((e: unknown) => void) | null = null;
+let pendingFatal: unknown = null;
+const prevHandler = ErrorUtils.getGlobalHandler();
+ErrorUtils.setGlobalHandler((e, isFatal) => {
+  if (!isFatal) {
+    prevHandler?.(e, isFatal);
+    return;
+  }
+  if (reportFatal) reportFatal(e);
+  else pendingFatal = e;
+});
+
 export default function RootLayout() {
   const t = useTheme();
+  const [fatal, setFatal] = useState<unknown>(pendingFatal);
+  useEffect(() => {
+    reportFatal = setFatal;
+    return () => {
+      reportFatal = null;
+    };
+  }, []);
 
   useEffect(() => {
     void initLocal();
     void initAuth();
   }, []);
+
+  if (fatal) return <ErrorScreen error={fatal} />;
 
   return (
     <GestureHandlerRootView style={[styles.flex, { backgroundColor: t.paper }]}>

@@ -76,7 +76,7 @@ export default function SessionsScreen() {
   const insets = useSafeAreaInsets();
   const q = useSessions();
   const lq = useLimits();
-  const { pending, starting } = sessUi.use();
+  const { pending, starting } = sessUi.useStore();
   const [refreshing, setRefreshing] = useState(false);
 
   // 前面にいる間だけ：一覧は30秒ごと、上限は5分ごと

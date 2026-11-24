@@ -15,7 +15,7 @@ import { BAR_H, useTheme } from '@/theme';
 
 export function MiniPlayer() {
   const t = useTheme();
-  const m = media.use();
+  const m = media.useStore();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const f = m.file;

@@ -40,7 +40,7 @@ export function FileRow({
   onOpen: (f: DFile) => void;
 }) {
   const t = useTheme();
-  const playId = nowPlaying.use().id;
+  const playId = nowPlaying.useStore().id;
   const fr = freshness(f.t);
   const playing = playId === f.id;
   const accent = playing || fr === 'fresh';
@@ -68,9 +68,9 @@ export function FileRow({
 export function RecentList({ onOpen }: { onOpen: (f: DFile) => void }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const ui = driveUi.use();
-  const rs = recentStore.use();
-  const pins = pinStore.use().pins;
+  const ui = driveUi.useStore();
+  const rs = recentStore.useStore();
+  const pins = pinStore.useStore().pins;
   const tick = useTick(30_000);
   const [refreshing, setRefreshing] = useState(false);
   const listRef = useRef<FlashListRef<Item>>(null);

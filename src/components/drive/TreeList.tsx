@@ -88,8 +88,8 @@ function DirRow({
 export function TreeList({ onOpen }: { onOpen: (f: DFile) => void }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const tree = treeStore.use();
-  const pins = pinStore.use().pins;
+  const tree = treeStore.useStore();
+  const pins = pinStore.useStore().pins;
   const tick = useTick(30_000);
   const menuRef = useRef<GlassMenuHandle>(null);
   const [menuFor, setMenuFor] = useState<{ path: string } | null>(null);

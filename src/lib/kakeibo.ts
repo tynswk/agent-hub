@@ -90,7 +90,7 @@ export function createStore<T extends object>(init: T) {
       state = { ...state, ...patch };
       subs.forEach((f) => f());
     },
-    use(): T {
+    useStore(): T {
       return useSyncExternalStore(
         (f) => {
           subs.add(f);
