@@ -2,7 +2,7 @@
   "expo": {
     "name": "Agent Hub",
     "slug": "agent-hub",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "scheme": "agenthub",
@@ -24,6 +24,15 @@
           "backgroundColor": "#000000",
           "image": "./assets/icon.png",
           "imageWidth": 140
+        }
+      ],
+      "expo-sqlite",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "レシートを撮影するためにカメラを使います",
+          "photosPermission": "レシートの写真を選ぶために写真を使います"
         }
       ]
     ],

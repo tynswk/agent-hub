@@ -4,7 +4,15 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HEADER_H, useTheme } from '@/theme';
 
-export function ScreenShell({ title, children }: { title: string; children?: ReactNode }) {
+export function ScreenShell({
+  title,
+  right,
+  children,
+}: {
+  title: string;
+  right?: ReactNode;
+  children?: ReactNode;
+}) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   return (
@@ -20,6 +28,7 @@ export function ScreenShell({ title, children }: { title: string; children?: Rea
         <View style={[StyleSheet.absoluteFill, { backgroundColor: t.glass2 }]} />
         <View style={[styles.titleRow, { paddingTop: insets.top }]}>
           <Text style={[styles.title, { color: t.ink }]}>{title}</Text>
+          {right}
         </View>
       </View>
     </View>
@@ -36,6 +45,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
   },
-  titleRow: { flex: 1, justifyContent: 'center', paddingHorizontal: 20 },
+  titleRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+  },
   title: { fontSize: 20, fontWeight: '700' },
 });

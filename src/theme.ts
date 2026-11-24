@@ -1,4 +1,4 @@
-import { useColorScheme } from 'react-native';
+import { Platform, useColorScheme } from 'react-native';
 
 // dots-pwa-shared/tokens.css の値。アクセントは fresh（琥珀）1色だけ。
 export const lightTheme = {
@@ -55,3 +55,10 @@ export const BG_PAPER_OVERLAY = 0.48;
 
 export const BAR_H = 58;
 export const HEADER_H = 48;
+
+// 金額・日付用の等幅（ui-monospace 相当）
+export const MONO = Platform.select({ ios: 'Menlo', default: 'monospace' }) as string;
+
+// 面の押下ハイライト（押している間だけ少し暗く）
+export const PRESS_DARK = 'rgba(255,255,255,0.08)';
+export const PRESS_LIGHT = 'rgba(0,0,0,0.07)';
