@@ -1,6 +1,6 @@
 {
   "name": "agent-hub",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "main": "expo-router/entry",
   "dependencies": {
     "@expo/ui": "~58.0.29",
@@ -32,6 +32,7 @@
     "expo-status-bar": "~58.0.5",
     "expo-symbols": "~58.0.5",
     "expo-system-ui": "~58.0.7",
+    "expo-updates": "~58.0.22",
     "expo-video": "~58.0.14",
     "expo-web-browser": "~58.1.0",
     "lucide-react-native": "^1.79.0",

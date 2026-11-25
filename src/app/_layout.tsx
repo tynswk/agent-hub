@@ -11,6 +11,7 @@ import { ToastHost } from '@/components/Toast';
 import { initAuth } from '@/lib/drive/auth';
 import { MediaHost } from '@/lib/drive/media';
 import { initLocal } from '@/lib/local';
+import { startOtaWatcher } from '@/lib/ota';
 import { queryClient } from '@/lib/queryClient';
 import { useTheme } from '@/theme';
 
@@ -46,6 +47,7 @@ export default function RootLayout() {
   useEffect(() => {
     void initLocal();
     void initAuth();
+    return startOtaWatcher();
   }, []);
 
   if (fatal) return <ErrorScreen error={fatal} />;
